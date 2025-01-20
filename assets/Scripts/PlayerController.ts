@@ -21,6 +21,7 @@ export class PlayerController extends Component {
   private _curPos: Vec3 = new Vec3(); // 當前位置
   private _deltaPos: Vec3 = new Vec3(0, 0, 0); // 位移
   private _targetPos: Vec3 = new Vec3(); // 目標位置
+  private _curMoveIndex: number = 0; // 當前是為多少步
 
   @property(Animation)
   BodyAnim: Animation = null;
@@ -37,6 +38,7 @@ export class PlayerController extends Component {
         // end
         this.node.setPosition(this._targetPos); // 強制到拿目標位置
         this._startJump = false;
+        this.onOnceJumpEnd();
       } else {
         console.log("update 2");
         // tween
@@ -55,6 +57,12 @@ export class PlayerController extends Component {
     } else {
       input.off(Input.EventType.MOUSE_UP, this.onMouseUp, this);
     }
+  }
+
+  reset() {
+    this._curMoveIndex = 0;
+    this.node.getPosition(this._curPos);
+    this._targetPos.set(0, 0, 0);
   }
 
   onMouseUp(event: EventMouse) {
@@ -90,5 +98,13 @@ export class PlayerController extends Component {
     if (this.BodyAnim) {
       this.BodyAnim.play(clipName);
     }
+
+    this._curMoveIndex += step;
+  }
+
+  // 監聽跳躍結束
+  onOnceJumpEnd() {
+    // 派發了一個名為JumpEnd的事件，並將_curMoveIndex作為參數傳遞出去
+    this.node.emit("JumpEnd", this._curMoveIndex);
   }
 }

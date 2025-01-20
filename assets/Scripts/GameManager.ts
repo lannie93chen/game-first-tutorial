@@ -47,6 +47,9 @@ export class GameManager extends Component {
   public stepsLabel: Label | null = null; // 計步器
   start() {
     this.setCurState(GameState.GS_INIT); // 第一初始化要在start()使用
+    // 監聽JumpEnd事件
+    // 某個節點派發的事件，只能用這個節點的引用去監聽
+    this.playerCtrl?.node.on("JumpEnd", this.onPlayerJumpEnd, this);
   }
 
   update(deltaTime: number) {}
@@ -117,7 +120,7 @@ export class GameManager extends Component {
     if (this.playerCtrl) {
       this.playerCtrl.setInputActive(false);
       this.playerCtrl.node.setPosition(Vec3.ZERO);
-      //   this.playerCtrl.reset();
+      this.playerCtrl.reset();
     }
   }
 
@@ -142,5 +145,27 @@ export class GameManager extends Component {
   // click:開始按鈕
   onStartButtonClicked() {
     this.setCurState(GameState.GS_PLAYING);
+  }
+
+  onPlayerJumpEnd(moveIndex: number) {
+    if (this.stepsLabel) {
+      this.stepsLabel.string =
+        "" + (moveIndex >= this.roadLength ? this.roadLength : moveIndex);
+    }
+    this.checkResult(moveIndex);
+  }
+
+  // 判斷結果:角色是否跳躍到坑洞或跳完所有地塊
+  checkResult(moveIndex: number) {
+    if (moveIndex < this.roadLength) {
+      if (this._road[moveIndex] == BlockType.BT_NONE) {
+        // 跳到坑
+
+        this.setCurState(GameState.GS_INIT);
+      }
+    } else {
+      // 跳超過了最大長度
+      this.setCurState(GameState.GS_INIT);
+    }
   }
 }
