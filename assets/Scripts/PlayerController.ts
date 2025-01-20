@@ -24,10 +24,7 @@ export class PlayerController extends Component {
 
   @property(Animation)
   BodyAnim: Animation = null;
-  start() {
-    // 註冊:監聽輸入，滑鼠事件
-    input.on(Input.EventType.MOUSE_UP, this.onMouseUp, this);
-  }
+  start() {}
   // 如幀率為 30 每秒時，則每秒會呼叫 update 30 次
   update(deltaTime: number) {
     // 物體移動:P_1 = P_0 + v*t(最終位置 = 目前位置 + 平均速度 * 時間間隔)
@@ -48,6 +45,15 @@ export class PlayerController extends Component {
         Vec3.add(this._curPos, this._curPos, this._deltaPos);
         this.node.setPosition(this._curPos); // 將位移設定給角色
       }
+    }
+  }
+
+  setInputActive(active: boolean) {
+    // 監聽輸入，滑鼠事件
+    if (active) {
+      input.on(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+    } else {
+      input.off(Input.EventType.MOUSE_UP, this.onMouseUp, this);
     }
   }
 
