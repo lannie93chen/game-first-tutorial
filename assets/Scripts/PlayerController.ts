@@ -7,6 +7,7 @@ import {
   Node,
   Vec3,
   Animation,
+  EventTouch,
 } from "cc";
 const { ccclass, property } = _decorator;
 export const BLOCK_SIZE = 40; // 移動單位
@@ -25,6 +26,12 @@ export class PlayerController extends Component {
 
   @property(Animation)
   BodyAnim: Animation = null;
+
+  // 觸控範圍
+  @property(Node)
+  leftTouch: Node = null;
+  @property(Node)
+  rightTouch: Node = null;
   start() {}
   // 如幀率為 30 每秒時，則每秒會呼叫 update 30 次
   update(deltaTime: number) {
@@ -51,9 +58,13 @@ export class PlayerController extends Component {
   setInputActive(active: boolean) {
     // 監聽輸入，滑鼠事件
     if (active) {
-      input.on(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+      //   input.on(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+      this.leftTouch.on(Input.EventType.TOUCH_START, this.onTouchStart, this);
+      this.rightTouch.on(Input.EventType.TOUCH_START, this.onTouchStart, this);
     } else {
-      input.off(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+      //   input.off(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+      this.leftTouch.off(Input.EventType.TOUCH_START, this.onTouchStart, this);
+      this.rightTouch.off(Input.EventType.TOUCH_START, this.onTouchStart, this);
     }
   }
 
@@ -69,6 +80,14 @@ export class PlayerController extends Component {
       this.jumpByStep(1);
     } else if (event.getButton() === 2) {
       // 按下右鍵
+      this.jumpByStep(2);
+    }
+  }
+  onTouchStart(event: EventTouch) {
+    const target = event.target as Node;
+    if (target?.name == "LeftTouch") {
+      this.jumpByStep(1);
+    } else {
       this.jumpByStep(2);
     }
   }
