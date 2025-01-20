@@ -2,6 +2,8 @@
 
 將使用 Cocos Creator 的 2D 特性，製作一款簡單的平台跳躍遊戲
 
+![game-image](assets/Images/game-image.png)
+
 ## Tech Stack
 
 - cocos(v3.8.2)
