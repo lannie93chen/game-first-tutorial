@@ -35,7 +35,6 @@ export class GameManager extends Component {
   update(deltaTime: number) {}
 
   generateRoad() {
-    console.log("this.generateRoad()");
     // reset
     this.node.removeAllChildren(); // 清除全部的子節點
     this._road = []; // 清空
@@ -56,7 +55,6 @@ export class GameManager extends Component {
         block.setPosition(i * BLOCK_SIZE, 0, 0);
       }
     }
-    console.log(" this._road", this._road);
   }
   // 生成方塊
   spawnBlockByType(type: BlockType) {
