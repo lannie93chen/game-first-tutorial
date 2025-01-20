@@ -33,14 +33,12 @@ export class PlayerController extends Component {
     if (this._startJump) {
       this._curJumpTime += deltaTime; // 累積的總跳躍時間
       if (this._curJumpTime > this._jumpTime) {
-        console.log("update 1");
         // 當跳躍時間是否結束
         // end
-        this.node.setPosition(this._targetPos); // 強制到拿目標位置
+        this.node.setPosition(this._targetPos); // 強制到達目標位置
         this._startJump = false;
         this.onOnceJumpEnd();
       } else {
-        console.log("update 2");
         // tween
         this.node.getPosition(this._curPos);
         this._deltaPos.x = this._curJumpSpeed * deltaTime; // 每一幀根據速度和時間計算位移

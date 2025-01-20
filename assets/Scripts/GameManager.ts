@@ -8,11 +8,13 @@
 import {
   _decorator,
   CCInteger,
+  Color,
   Component,
   instantiate,
   Label,
   Node,
   Prefab,
+  Sprite,
   Vec3,
 } from "cc";
 import { BLOCK_SIZE, PlayerController } from "./PlayerController";
@@ -38,6 +40,7 @@ export class GameManager extends Component {
   @property({ type: CCInteger })
   public roadLength: number = 50; // 道路長度
   private _road: BlockType[] = [];
+  private score: number = 0;
 
   @property({ type: Node })
   public startMenu: Node | null = null; // 開始的UI
@@ -101,20 +104,19 @@ export class GameManager extends Component {
         this.playing();
         break;
       case GameState.GS_END:
+        this.gameOver();
         break;
     }
   }
   // 遊戲初始
   init() {
-    // GS_INIT：狀態下需要初始化地圖、將角色放回初始點、顯示遊戲的UI
+    // GS_INIT：將角色放回初始點、顯示遊戲的UI
 
     if (this.startMenu) {
       // 顯示開始UI
       this.startMenu.active = true;
+      this.stepsLabel.node.active = false;
     }
-
-    // 產生地圖
-    this.generateRoad();
 
     // 角色控制
     if (this.playerCtrl) {
@@ -126,8 +128,15 @@ export class GameManager extends Component {
 
   playing() {
     // GS_PLAYING：在狀態下隱藏開始UI、重新設計步器的數值、啟用使用者輸入
+    this.score = 0;
+    this.startMenu.removeChild(this.startMenu.getChildByName("Score"));
+
+    // 產生地圖
+    this.generateRoad();
+
     if (this.startMenu) {
       this.startMenu.active = false;
+      this.stepsLabel.node.active = true;
     }
 
     if (this.stepsLabel) {
@@ -142,17 +151,57 @@ export class GameManager extends Component {
     }, 0.1);
   }
 
+  gameOver() {
+    // GS_END：在狀態下改變開始UI，顯示遊戲結束與最後得分
+    if (this.startMenu) {
+      this.startMenu.getChildByName("Bg").getComponent(Sprite).color =
+        Color.RED;
+      this.startMenu
+        .getChildByName("Button")
+        .getChildByName("Label")
+        .getComponent(Label).string = "RESTART";
+      this.startMenu.getChildByName("Title").getComponent(Label).string =
+        "Game Over :(";
+      this.startMenu.getChildByName("Title").setPosition(0, 70, 0);
+
+      // 新增一個動態的 Label
+      const newLabelNode = new Node("Score");
+      const newLabel = newLabelNode.addComponent(Label);
+      newLabel.string = "Score:" + this.score;
+      newLabel.fontSize = 24; // 設定字型大小
+      newLabel.color = Color.YELLOW; // 設定顏色
+
+      // 設定 Label 的位置
+      newLabelNode.setPosition(0, 30, 0); // 調整位置（相對於 startMenu）
+      this.startMenu.addChild(newLabelNode);
+
+      // 隱藏遊戲中的步數
+      this.stepsLabel.node.active = false;
+
+      // 顯示UI畫面
+      this.startMenu.active = true;
+    }
+
+    if (this.playerCtrl) {
+      this.playerCtrl.setInputActive(false);
+      this.playerCtrl.node.setPosition(Vec3.ZERO);
+      this.playerCtrl.reset();
+    }
+  }
+
   // click:開始按鈕
   onStartButtonClicked() {
     this.setCurState(GameState.GS_PLAYING);
   }
 
   onPlayerJumpEnd(moveIndex: number) {
-    if (this.stepsLabel) {
-      this.stepsLabel.string =
-        "" + (moveIndex >= this.roadLength ? this.roadLength : moveIndex);
+    const res = this.checkResult(moveIndex);
+    if (res !== GameState.GS_END) {
+      if (this.stepsLabel) {
+        this.score = moveIndex >= this.roadLength ? this.roadLength : moveIndex;
+        this.stepsLabel.string = "" + this.score;
+      }
     }
-    this.checkResult(moveIndex);
   }
 
   // 判斷結果:角色是否跳躍到坑洞或跳完所有地塊
@@ -160,8 +209,8 @@ export class GameManager extends Component {
     if (moveIndex < this.roadLength) {
       if (this._road[moveIndex] == BlockType.BT_NONE) {
         // 跳到坑
-
-        this.setCurState(GameState.GS_INIT);
+        this.setCurState(GameState.GS_END);
+        return GameState.GS_END;
       }
     } else {
       // 跳超過了最大長度
