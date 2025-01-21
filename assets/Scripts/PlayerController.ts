@@ -83,6 +83,7 @@ export class PlayerController extends Component {
       this.jumpByStep(2);
     }
   }
+
   onTouchStart(event: EventTouch) {
     const target = event.target as Node;
     if (target?.name == "LeftTouch") {

@@ -1205,7 +1205,7 @@
       "__uuid__": "2f2d68bd-7c14-4e89-8ae3-8628224d76aa",
       "__expectedType__": "cc.Prefab"
     },
-    "roadLength": 50,
+    "roadLength": 10,
     "startMenu": {
       "__id__": 16
     },

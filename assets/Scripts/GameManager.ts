@@ -12,6 +12,7 @@ import {
   Component,
   instantiate,
   Label,
+  Layers,
   Node,
   Prefab,
   Sprite,
@@ -30,6 +31,7 @@ enum BlockType {
 enum GameState {
   GS_INIT,
   GS_PLAYING,
+  GS_FAIL,
   GS_END,
 }
 @ccclass("GameManager")
@@ -38,7 +40,7 @@ export class GameManager extends Component {
   boxPrefab: Prefab | null = null;
 
   @property({ type: CCInteger })
-  public roadLength: number = 50; // 道路長度
+  public roadLength: number = 10; // 道路長度
   private _road: BlockType[] = [];
   private score: number = 0;
 
@@ -64,9 +66,16 @@ export class GameManager extends Component {
 
     // 設置初始位置
     for (let i = 0; i < this.roadLength; i++) {
-      // 第一個位置固定加入石塊，其餘位置根據條件加入
+      /* 
+       1.第一個位置固定加入石塊
+       2.如果前面1個是坑，那麼接下來的就必須是方塊
+       3.最後一個位置固定加入石塊
+       4.其餘位置根據條件加入
+      */
       const blockType =
-        i === 0 || this._road[i - 1] === BlockType.BT_NONE
+        i === 0 ||
+        this._road[i - 1] === BlockType.BT_NONE ||
+        i === this.roadLength - 1
           ? BlockType.BT_STONE
           : Math.floor(Math.random() * 2); // 隨機生成0或1
       this._road.push(blockType);
@@ -103,8 +112,11 @@ export class GameManager extends Component {
       case GameState.GS_PLAYING:
         this.playing();
         break;
-      case GameState.GS_END:
+      case GameState.GS_FAIL:
         this.gameOver();
+        break;
+      case GameState.GS_END:
+        this.gameWin();
         break;
     }
   }
@@ -166,6 +178,45 @@ export class GameManager extends Component {
 
       // 新增一個動態的 Label
       const newLabelNode = new Node("Score");
+      newLabelNode.layer = Layers.Enum.UI_2D; // 指定layer
+      const newLabel = newLabelNode.addComponent(Label);
+      newLabel.string = "Score:" + this.score;
+      newLabel.fontSize = 24; // 設定字型大小
+      newLabel.color = Color.YELLOW; // 設定顏色
+
+      // 設定 Label 的位置
+      newLabelNode.setPosition(0, 30, 0); // 調整位置（相對於 startMenu）
+      this.startMenu.addChild(newLabelNode);
+
+      // 隱藏遊戲中的步數
+      this.stepsLabel.node.active = false;
+
+      // 顯示UI畫面
+      this.startMenu.active = true;
+    }
+
+    if (this.playerCtrl) {
+      this.playerCtrl.setInputActive(false);
+      this.playerCtrl.node.setPosition(Vec3.ZERO);
+      this.playerCtrl.reset();
+    }
+  }
+  gameWin() {
+    // GS_END：在狀態下改變開始UI，顯示遊戲結束與最後得分
+    if (this.startMenu) {
+      this.startMenu.getChildByName("Bg").getComponent(Sprite).color =
+        new Color(0, 128, 0);
+      this.startMenu
+        .getChildByName("Button")
+        .getChildByName("Label")
+        .getComponent(Label).string = "REPLAY";
+      this.startMenu.getChildByName("Title").getComponent(Label).string =
+        "YOU WIN :D";
+      this.startMenu.getChildByName("Title").setPosition(0, 70, 0);
+
+      // 新增一個動態的 Label
+      const newLabelNode = new Node("Score");
+      newLabelNode.layer = Layers.Enum.UI_2D; // 指定layer
       const newLabel = newLabelNode.addComponent(Label);
       newLabel.string = "Score:" + this.score;
       newLabel.fontSize = 24; // 設定字型大小
@@ -195,13 +246,10 @@ export class GameManager extends Component {
   }
 
   onPlayerJumpEnd(moveIndex: number) {
-    const res = this.checkResult(moveIndex);
-    if (res !== GameState.GS_END) {
-      if (this.stepsLabel) {
-        this.score = moveIndex >= this.roadLength ? this.roadLength : moveIndex;
-        this.stepsLabel.string = "" + this.score;
-      }
-    }
+    this.score = moveIndex >= this.roadLength ? this.roadLength : moveIndex;
+
+    this.checkResult(moveIndex);
+    this.stepsLabel.string = "" + this.score;
   }
 
   // 判斷結果:角色是否跳躍到坑洞或跳完所有地塊
@@ -209,12 +257,12 @@ export class GameManager extends Component {
     if (moveIndex < this.roadLength) {
       if (this._road[moveIndex] == BlockType.BT_NONE) {
         // 跳到坑
-        this.setCurState(GameState.GS_END);
-        return GameState.GS_END;
+        this.score = this.score - 1;
+        this.setCurState(GameState.GS_FAIL);
       }
     } else {
       // 跳超過了最大長度
-      this.setCurState(GameState.GS_INIT);
+      this.setCurState(GameState.GS_END);
     }
   }
 }
